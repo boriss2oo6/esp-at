@@ -58,11 +58,13 @@ Authorization: token %s\r\n\
 Accept-Encoding: gzip,deflate,sdch\r\n\
 Accept-Language: zh-CN,zh;q=0.8\r\n\r\n"
 
-#define ESP_AT_OTA_TIMEOUT_MS               (60*3*1000)
+#define ESP_AT_OTA_TIMEOUT_MS               (60*7*1000)
 
 static xTimerHandle esp_at_ota_timeout_timer = NULL;
 static bool esp_at_ota_timeout_flag = false;
 static int esp_at_ota_socket_id = -1;
+static char ota_server[64];
+static uint16_t ota_port;
 
 #define ESP_AT_OTA_DEBUG  printf
 
@@ -107,14 +109,14 @@ bool esp_at_upgrade_process(esp_at_ota_mode_type ota_mode,uint8_t* version)
 
     ESP_AT_OTA_DEBUG("ota_mode:%d\r\n",ota_mode);
     if (ota_mode == ESP_AT_OTA_MODE_NORMAL) {
-        server_ip = CONFIG_AT_OTA_SERVER_IP;
-        server_port = CONFIG_AT_OTA_SERVER_PORT;
+        server_ip = ota_server;
+        server_port = ota_port;
     }
 #ifdef CONFIG_AT_OTA_SSL_SUPPORT
-    else if (ota_mode == ESP_AT_OTA_MODE_SSL) {
-        server_ip = CONFIG_AT_OTA_SSL_SERVER_IP;
-        server_port = CONFIG_AT_OTA_SSL_SERVER_PORT;
-    }
+    //else if (ota_mode == ESP_AT_OTA_MODE_SSL) {
+    //    server_ip = CONFIG_AT_OTA_SSL_SERVER_IP;
+    //    server_port = CONFIG_AT_OTA_SSL_SERVER_PORT;
+    //}
 #endif
     else {
         return ret;
@@ -443,3 +445,39 @@ OTA_ERROR:
     return ret;
 }
 #endif
+
+bool esp_at_set_ota_server(char* server, uint16_t port)
+{
+    if (server == NULL)
+    {
+        printf("Null ptr\r\n");
+        return false;
+    }
+    uint32_t server_name_len = strlen(server);
+    if (server_name_len >= sizeof(ota_server))
+    {
+        printf("Server length too big\r\n");
+        return false;
+    }
+    if (!port)
+    {
+        printf("Port invalid\r\n");
+        return false;
+    }
+    memcpy(ota_server, server, server_name_len);
+    ota_port = port;
+    return true;
+}
+
+bool esp_at_print_ota_server(uint8_t* cmd_name)
+{
+    if (cmd_name == NULL)
+    {
+        printf("Null ptr\r\n");
+        return false;
+    }
+    uint8_t buffer[128];
+    snprintf((char*)buffer, sizeof(buffer) - 1, "%s:\"%s\",%u\r\n", (char*)cmd_name, ota_server, ota_port);
+    esp_at_port_write_data(buffer, strlen((char*)buffer));
+    return true;
+}

@@ -101,8 +101,50 @@ static uint8_t at_setupCmdCipupdate(uint8_t para_num)
     return ESP_AT_RESULT_CODE_ERROR;
 }
 
+static uint8_t at_queryCmdTfmotaserver(uint8_t* cmd_name)
+{
+    if (esp_at_print_ota_server(cmd_name))
+    {
+        return ESP_AT_RESULT_CODE_OK;
+    }
+
+    return ESP_AT_RESULT_CODE_ERROR;
+}
+
+static uint8_t at_setupCmdTfmotaserver(uint8_t para_num)
+{
+    int32_t cnt = 0;
+    uint8_t* server = NULL;
+    int32_t port = 0;
+    if (para_num != 2)
+    {
+        return ESP_AT_RESULT_CODE_ERROR;
+    }
+
+    if (esp_at_get_para_as_str(cnt++, &server) != ESP_AT_PARA_PARSE_RESULT_OK)
+    {
+        return ESP_AT_RESULT_CODE_ERROR;
+    }
+
+    if (esp_at_get_para_as_digit(cnt++, &port) != ESP_AT_PARA_PARSE_RESULT_OK) 
+    {
+        return ESP_AT_RESULT_CODE_ERROR;
+    }
+
+    if (esp_at_set_ota_server((char*)server, (uint16_t)port))
+    {
+        return ESP_AT_RESULT_CODE_OK;
+    }
+
+    return ESP_AT_RESULT_CODE_ERROR;
+}
+
 static esp_at_cmd_struct at_update_cmd[] = {
     {"+CIUPDATE", NULL, NULL, at_setupCmdCipupdate, at_exeCmdCipupdate},
+};
+
+static esp_at_cmd_struct at_update_server_cmd[] = {
+    {"+TFMOTASERVER", NULL, at_queryCmdTfmotaserver, at_setupCmdTfmotaserver, NULL},
 };
 #endif
 
@@ -334,6 +376,7 @@ void app_main()
 
 #ifdef CONFIG_AT_OTA_SUPPORT
     esp_at_custom_cmd_array_regist (at_update_cmd, sizeof(at_update_cmd)/sizeof(at_update_cmd[0]));
+    esp_at_custom_cmd_array_regist(at_update_server_cmd, sizeof(at_update_server_cmd) / sizeof(at_update_server_cmd[0]));
 #endif
 
 #ifdef CONFIG_AT_SIGNALING_COMMAND_SUPPORT

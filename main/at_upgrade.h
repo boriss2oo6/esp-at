@@ -31,6 +31,8 @@ typedef enum {
 } esp_at_ota_mode_type;
 
 bool esp_at_upgrade_process(esp_at_ota_mode_type ota_mode,uint8_t* version);
+bool esp_at_set_ota_server(char* server, uint16_t port);
+bool esp_at_print_ota_server(uint8_t* cmd_name);
 
 #endif
 
