@@ -56,6 +56,9 @@
 #endif
 
 #ifdef CONFIG_AT_OTA_SUPPORT
+
+#define TFM_VERSION "0.0.1"
+
 static uint8_t at_exeCmdCipupdate(uint8_t *cmd_name)//add get station ip and ap ip
 {
 
@@ -139,12 +142,21 @@ static uint8_t at_setupCmdTfmotaserver(uint8_t para_num)
     return ESP_AT_RESULT_CODE_ERROR;
 }
 
+static uint8_t at_exeCmdTfm(uint8_t* cmd_name)
+{
+    uint8_t buffer[128];
+    snprintf((char*)buffer, sizeof(buffer) - 1, "%s:\"%s\"\r\n", (char*)cmd_name, TFM_VERSION);
+    esp_at_port_write_data(buffer, strlen((char*)buffer));
+    return ESP_AT_RESULT_CODE_OK;
+}
+
 static esp_at_cmd_struct at_update_cmd[] = {
     {"+CIUPDATE", NULL, NULL, at_setupCmdCipupdate, at_exeCmdCipupdate},
 };
 
 static esp_at_cmd_struct at_update_server_cmd[] = {
     {"+TFMOTASERVER", NULL, at_queryCmdTfmotaserver, at_setupCmdTfmotaserver, NULL},
+    {"+TFM", NULL, NULL, NULL, at_exeCmdTfm}
 };
 #endif
 
